@@ -7,11 +7,20 @@ import (
 	"os"
 )
 
-// PORT=8080 go run web.go
+type Handlers struct {
+	logger *log.Logger
+}
+
+func NewHandlers(logger *log.Logger) *Handlers {
+	return &Handlers{
+		logger: logger,
+	}
+}
 
 func main() {
-	logger := log.New(os.Stdout, "web app ", log.LstdFlags|log.Lshortfile)
-	logger.Println("Server is starting...")
+	logger := log.New(os.Stdout, "webapp ", log.LstdFlags|log.Lshortfile)
+	s := NewHandlers(logger)
+	logger.Println("Webapp is starting...")
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -20,9 +29,9 @@ func main() {
 
 	rserver := http.NewServeMux()
 
-	rserver.Handle("/", index())
+	rserver.Handle("/", s.index())
 
-	logger.Println("Web server is ready at", port)
+	logger.Println("Webapp is ready to handle requests at port", port)
 
 	if err := http.ListenAndServe(fmt.Sprintf(":%v", port), rserver); err != nil {
 		logger.Fatalf("Could not listen on %s: %v\n", port, err)
@@ -31,7 +40,7 @@ func main() {
 	logger.Printf("Server stopped")
 }
 
-func index() http.Handler {
+func (h *Handlers) index() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		if r.URL.Path != "/" {
@@ -48,7 +57,7 @@ func index() http.Handler {
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.WriteHeader(http.StatusOK)
 
-		log.Printf("--> %s %s", r.Method, r.URL.Path)
+		h.logger.Printf("--> %s %s", r.Method, r.URL.Path)
 		fmt.Fprintln(w, "Cloud runner!")
 	})
 }

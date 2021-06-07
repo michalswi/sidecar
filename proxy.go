@@ -9,10 +9,6 @@ import (
 	"os"
 )
 
-// main
-// PPORT=5050 APORT=8080 go run proxy.go
-// curl localhost:5050
-
 func main() {
 	logger := log.New(os.Stdout, "web app ", log.LstdFlags|log.Lshortfile)
 	logger.Println("Proxy is starting...")
@@ -43,7 +39,7 @@ func main() {
 		proxy.ServeHTTP(rw, req)
 	})
 
-	logger.Println("Proxy is ready to handle requests at", proxyPort)
+	logger.Println("Proxy is ready to handle requests at port", proxyPort)
 
 	if err := http.ListenAndServe(fmt.Sprintf(":%v", proxyPort), rproxy); err != nil {
 		logger.Fatalf("Could not listen on %s: %v\n", proxyPort, err)

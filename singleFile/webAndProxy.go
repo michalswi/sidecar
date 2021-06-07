@@ -9,15 +9,22 @@ import (
 	"os"
 )
 
-// PORT=8080 PPORT=5050 go run no_sidecar/webAndProxy.go
-// curl localhost:5050
+type Handlers struct {
+	logger *log.Logger
+}
+
+func NewHandlers(logger *log.Logger) *Handlers {
+	return &Handlers{
+		logger: logger,
+	}
+}
 
 func main() {
 
 	logger := log.New(os.Stdout, "web app ", log.LstdFlags|log.Lshortfile)
+	s := NewHandlers(logger)
 	logger.Println("Server is starting...")
 
-	// check ports
 	port := os.Getenv("PORT")
 	if port == "" {
 		logger.Fatal("PORT env var is missing.")
@@ -31,10 +38,10 @@ func main() {
 	// addr := net.JoinHostPort("0.0.0.0", port)
 	// fmt.Println(addr)
 
-	// WEB SERVER
+	// WEBAPP
 	rserver := http.NewServeMux()
 
-	rserver.Handle("/", index())
+	rserver.Handle("/", s.index())
 	// OR
 	// if I use 'http.HandleFunc()' instead of 'rserver.HandleFunc()' it won't work as expected
 	// rserver.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
@@ -42,7 +49,7 @@ func main() {
 	// })
 
 	go func() {
-		logger.Println("Web server is ready at", port)
+		logger.Println("Webapp is ready to handle requests at port", port)
 		if err := http.ListenAndServe(fmt.Sprintf(":%v", port), rserver); err != nil {
 			logger.Fatalf("Could not listen on %s: %v\n", port, err)
 		}
@@ -65,7 +72,7 @@ func main() {
 		proxy.ServeHTTP(rw, req)
 	})
 
-	logger.Println("Proxy is ready to handle requests at", pxport)
+	logger.Println("Proxy is ready to handle requests at port", pxport)
 	if err := http.ListenAndServe(fmt.Sprintf(":%v", pxport), rproxy); err != nil {
 		logger.Fatalf("Could not listen on %s: %v\n", pxport, err)
 	}
@@ -73,7 +80,7 @@ func main() {
 	logger.Printf("Server stopped")
 }
 
-func index() http.Handler {
+func (h *Handlers) index() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		if r.URL.Path != "/" {
@@ -90,7 +97,7 @@ func index() http.Handler {
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.WriteHeader(http.StatusOK)
 
-		log.Printf("--> %s %s", r.Method, r.URL.Path)
+		h.logger.Printf("--> %s %s", r.Method, r.URL.Path)
 		fmt.Fprintln(w, "Cloud runner!")
 	})
 }
