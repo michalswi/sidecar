@@ -1,29 +1,32 @@
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: http-server
+  name: http-app
 spec:
   selector:
     matchLabels:
-      app: http-server
+      app: http-sidecar
   replicas: 1
   template:
     metadata:
       labels:
-        app: http-server
+        app: http-sidecar
     spec:
       containers:
       - name: http-server
-        image: <image1>
+        image: michalsw/webapp
         ports:
-        - containerPort: 8080
+        - name: appport
+          containerPort: 8080
         env:
         - name: PORT
           value: "8080"
       - name: http-sidecar
-        image: <image2>
+        image: michalsw/proxy
         ports:
-        - containerPort: 5050
+        - name: proxyport
+          containerPort: 5050
         env:
         - name: PPORT
           value: "5050"
@@ -33,13 +36,14 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: http-server
+  name: http-app-svc
   labels:
-    app: http-server
+    app: http-app-svc
 spec:
-  ports:
-    - port: 8080
-      name: http
-      protocol: TCP
   selector:
-    app: http-server
+    app: http-sidecar
+  type: LoadBalancer
+  ports:
+    - name: http
+      port: 60000
+      targetPort: proxyport
