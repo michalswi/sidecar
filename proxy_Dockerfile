@@ -1,0 +1,31 @@
+ARG GOLANG_VERSION
+ARG ALPINE_VERSION
+
+# build
+FROM golang:${GOLANG_VERSION}-alpine${ALPINE_VERSION} AS builder
+
+RUN apk --no-cache add make git; \
+    adduser -D -h /tmp/dummy dummy
+
+USER dummy
+
+WORKDIR /tmp/dummy
+
+COPY --chown=dummy Makefile Makefile
+
+ARG APPNAME
+
+COPY --chown=dummy ${APPNAME}.go ${APPNAME}.go
+
+RUN make go-build
+
+# execute
+FROM alpine:${ALPINE_VERSION}
+
+ARG APPNAME
+
+ENV PORT 8080
+
+COPY --from=builder /tmp/dummy/${APPNAME} /usr/bin/${APPNAME}
+
+CMD ["proxy"]

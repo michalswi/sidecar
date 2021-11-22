@@ -20,18 +20,18 @@ func NewHandlers(logger *log.Logger) *Handlers {
 func main() {
 	logger := log.New(os.Stdout, "webapp ", log.LstdFlags|log.Lshortfile)
 	s := NewHandlers(logger)
-	logger.Println("Webapp is starting...")
+	logger.Println("Server is starting...")
 
 	port := os.Getenv("PORT")
 	if port == "" {
-		logger.Fatal("PORT env var is missing.")
+		logger.Fatal("PORT variable is missing.")
 	}
 
 	rserver := http.NewServeMux()
 
 	rserver.Handle("/", s.index())
 
-	logger.Println("Webapp is ready to handle requests at port", port)
+	logger.Println("Server is ready to handle requests at port", port)
 
 	if err := http.ListenAndServe(fmt.Sprintf(":%v", port), rserver); err != nil {
 		logger.Fatalf("Could not listen on %s: %v\n", port, err)
